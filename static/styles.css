@@ -34,21 +34,40 @@ input[type="text"] {
 
 button {
     padding: 10px 15px;
-    background-color: #4caf50; /* Lighter green for Osvježi */
+    background-color: #4caf50;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background-color 0.3s ease; /* Smooth transition on hover */
+    transition: background-color 0.3s ease;
 }
 
 button:hover {
-    background-color: #45a049; /* Darker green on hover */
+    background-color: #45a049;
 }
 
 button:active {
-    background-color: #388e3c; /* Even darker green when clicked */
-    transform: scale(0.98); /* Slight button press effect */
+    background-color: #388e3c;
+    transform: scale(0.98);
+}
+
+#search-button {
+    display: inline-block;
+    width: auto;
+}
+
+.bottom-button {
+    margin-top: 20px;
+    padding: 10px 15px;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: auto;
 }
 
 .validation-error {
@@ -85,28 +104,15 @@ td {
     color: red;
 }
 
-.bottom-button {
-    margin-top: 20px;
-    padding: 10px 15px;
-    background-color: #4caf50; /* Lighter green for Osvježi */
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    display: block; /* Centers the button */
-    margin-left: auto; /* Centering the button */
-    margin-right: auto; /* Centering the button */
-}
-
 .footer {
     text-align: center;
     margin-top: 20px;
     font-size: 0.9em;
-    color: #666; /* Light grey color */
+    color: #666;
 }
 
 .footer a {
-    color: #4caf50; /* Green links */
+    color: #4caf50;
     text-decoration: none;
 }
 
@@ -114,63 +120,37 @@ td {
     text-decoration: underline;
 }
 
-/* Style for the datalist suggestions */
-.suggestion-option {
-    white-space: nowrap; /* Prevent text from wrapping */
-    width: 600px; /* Set the width to make it wider */
-}
-
-/* Dropdown styles */
 select {
-    width: 100%; /* Full width dropdown */
+    width: 100%;
     padding: 10px;
-    font-size: 16px; /* Increase font size for readability */
+    font-size: 16px;
     border-radius: 4px;
     border: 1px solid #ccc;
-    margin-bottom: 15px; /* Space between the dropdowns */
+    margin-bottom: 15px;
     background-color: #f4f4f4;
     cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Soft shadow */
-    transition: all 0.2s ease; /* Smooth transition for interactions */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
 }
 
 select:focus, select:hover {
-    border-color: #4caf50; /* Green highlight on hover/focus */
-    background-color: #e7f9e7; /* Light green background */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Slightly larger shadow on hover */
+    border-color: #4caf50;
+    background-color: #e7f9e7;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 option {
-    padding: 10px; /* Padding for each option */
-    font-size: 16px; /* Larger font for options */
+    padding: 10px;
+    font-size: 16px;
 }
 
-/* Ensure space between consecutive select dropdowns */
 select + select {
     margin-top: 15px;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    select, input[type="text"], button {
-        width: 100%; /* Full width on smaller screens */
-        font-size: 14px; /* Slightly reduce font size for better fit */
-    }
-
-    .container {
-        padding: 15px;
-        max-width: 100%; /* Allow container to fit on smaller screens */
-    }
-}
-
-
-
-
-
-
 #map-container {
     width: 100%;
-    height: 400px; /* Default height for non-fullscreen mode */
+    height: 400px;
     position: relative;
 }
 
@@ -179,9 +159,9 @@ select + select {
     top: 0;
     left: 0;
     width: 100%;
-    height: 100%;
-    z-index: 9999; /* Make sure it's on top of everything */
-    background: white; /* Ensure the background is white in full screen */
+    height: 100vh;
+    z-index: 9999;
+    background: white;
 }
 
 #fullscreen-button {
@@ -192,12 +172,67 @@ select + select {
     background-color: #8d928d;
     color: white;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     cursor: pointer;
-    z-index: 10000; /* Ensure it's above the map */
+    z-index: 10000;
+    width: auto;
+    font-size: 14px;
 }
 
 #status {
     margin-top: 20px;
     text-align: center;
+}
+
+/* Custom dropdown styles */
+#suggestions-container {
+    position: absolute;
+    width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-top: none;
+    background-color: white;
+    z-index: 1000;
+}
+
+.suggestion-item {
+    padding: 10px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background-color: #f0f0f0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+        max-width: 100%;
+    }
+
+    input[type="text"], select {
+        width: 100%;
+        font-size: 16px;
+    }
+
+    button {
+        font-size: 16px;
+    }
+
+    #search-button {
+        width: auto;
+        margin-right: 10px;
+    }
+
+    .bottom-button {
+        width: auto;
+        max-width: 200px;
+    }
+
+    #fullscreen-button {
+        padding: 8px;
+        font-size: 12px;
+    }
 }
