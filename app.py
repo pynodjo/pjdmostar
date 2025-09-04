@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_from_directory, abort
 import json
 import pandas as pd
 import numpy as np  # Import numpy
@@ -7,7 +7,8 @@ from datetime import datetime
 import re  # Add this import for regex
 import folium
 import atexit
-
+from werkzeug.utils import secure_filename
+import os
 
 app = Flask(__name__)
 
@@ -234,37 +235,38 @@ def get_oh_values_by_oj(oj_value):
         else:
             filtered_df = df[df['OJ'] == int(oj_value)]
         
-        # Sort the filtered DataFrame by 'OH' in ascending order
         filtered_df = filtered_df.sort_values(by='OH')
-
-        # Extract unique OH values after sorting
         unique_oh_values = filtered_df['OH'].unique().tolist()
         return jsonify(unique_oh_values)
     except Exception as e:
         print(f"Error in get_oh_values_by_oj: {str(e)}")
-        return jsonify([]), 500
-
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/search_by_oj_oh', methods=['GET'])
 def search_by_oj_oh():
     oj_value = request.args.get('oj')
     oh_value = request.args.get('oh')
     
+    if not oj_value or not oh_value:
+        return jsonify({"error": "Missing oj or oh parameter"}), 400
+    
     print(f"search_by_oj_oh called with oj_value: {oj_value}, oh_value: {oh_value}")
-
+    
     try:
+        # Filter data
         if oj_value == "303":
             filtered_df = df[(df['OJ'].isin([3031, 3032])) & (df['OH'] == oh_value)]
         else:
             filtered_df = df[(df['OJ'] == int(oj_value)) & (df['OH'] == oh_value)]
-
+        
         print(f"Filtered DataFrame shape: {filtered_df.shape}")
-
-        folium_map = folium.Map(location=[43.343, 17.807], zoom_start=12)
-
+        
+        # Prepare features list for frontend
+        features = []
         for index, row in filtered_df.iterrows():
             sifra = row['Šifra']
             
+            # Find coordinates from the data features
             coordinates = None
             for feature in data['features']:
                 if feature['properties']['SIFRA'] == sifra:
@@ -272,31 +274,42 @@ def search_by_oj_oh():
                     break
             
             if coordinates:
-                lon, lat = coordinates  # Note that coordinates are [longitude, latitude]
-                
-                # Prepare popup content
-                popup_content = (
-                    f"Kupac: <strong>{row['Kupac']}</strong><br>"
-                    f"Adresa: <strong>{row['Adresa']}</strong><br>"
-                    f"Šifra mjernog mjesta: <strong>{sifra}</strong><br>"
-                    f"Serijski broj brojila: <strong>{row['Serijski']}</strong><br>"
-                    f"Tip brojila: <strong>{row['Tip']}</strong><br>"
-                    f"ROH: <strong>{row['ROH']}</strong>"  # Add ROH here
-                )
-                
-                folium.Marker(
-                    [lat, lon],
-                    popup=popup_content
-                ).add_to(folium_map)
-            else:
-                print(f"No coordinates found for Šifra: {sifra}")
-
-        map_html = folium_map._repr_html_()
-        return map_html
-
+                features.append({
+                    'geometry': {
+                        'coordinates': coordinates,
+                        'type': 'Point'
+                    },
+                    'properties': {
+                        'IME_PREZIME': row['Kupac'],
+                        'ADRESA_MM': row['Adresa'],
+                        'SIFRA': sifra,
+                        'SERIJSKI': row['Serijski'],
+                        'TIP': row['Tip'],
+                        'ROH': row['ROH']
+                    },
+                    'type': 'Feature'
+                })
+        
+        if not features:
+            return jsonify({
+                "error": "No features found for this combination"
+            }), 404
+        
+        # Get center coordinates from first feature
+        center = [
+            features[0]['geometry']['coordinates'][1],
+            features[0]['geometry']['coordinates'][0]
+        ]
+        
+        return jsonify({
+            "features": features,
+            "center": center,
+            "total": len(features)
+        })
+        
     except Exception as e:
         print(f"Error in search_by_oj_oh: {str(e)}")
-        return f"An error occurred: {str(e)}", 500
+        return jsonify({"error": str(e)}), 500
     
 @app.route('/get_trafostanica_data', methods=['POST'])
 def get_trafostanica_data():
@@ -359,15 +372,11 @@ def get_trafostanica_suggestions():
 
 @app.route('/view_all_trafostanice', methods=['GET'])
 def view_all_trafostanice():
-    app.logger.debug("Generating map with all trafostanice...")
+    app.logger.debug("Preparing trafostanice data...")
     try:
-        # Create a map centered on a middle point (adjust these coordinates as needed for your area)
-        folium_map = folium.Map(location=[43.343, 17.807], zoom_start=11)
-        
-        # Counter for tracking markers added
+        features = []
         markers_added = 0
         
-        # Add markers for each trafostanica
         for feature in trafostanica_data['features']:
             try:
                 if ('geometry' in feature and 
@@ -381,35 +390,127 @@ def view_all_trafostanice():
                     naziv = properties.get('NAZIV', 'N/A')
                     snaga = properties.get('SNAGA', 'N/A')
                     
-                    # Create popup content
-                    popup_content = f"""
-                        <div style='min-width: 200px'>
-                            <b>Naziv:</b> {naziv}<br>
-                            <b>Snaga:</b> {snaga} kVA
-                        </div>
-                    """
+                    # Create feature object
+                    feature_obj = {
+                        'type': 'Feature',
+                        'geometry': {
+                            'type': 'Point',
+                            'coordinates': coords
+                        },
+                        'properties': {
+                            'naziv': naziv,
+                            'snaga': snaga
+                        }
+                    }
                     
-                    # Add marker to map (note the coordinate flip: Folium uses [lat, lon])
-                    folium.Marker(
-                        location=[coords[1], coords[0]],
-                        popup=popup_content,
-                        tooltip=naziv
-                    ).add_to(folium_map)
-                    
+                    features.append(feature_obj)
                     markers_added += 1
                     
             except Exception as e:
                 app.logger.error(f"Error processing trafostanica: {str(e)}")
                 continue
         
-        app.logger.debug(f"Successfully added {markers_added} markers to the map")
+        app.logger.debug(f"Successfully processed {markers_added} trafostanice")
         
-        # Return the HTML representation of the map
-        return folium_map._repr_html_()
+        # Calculate center point (average of all coordinates)
+        if features:
+            lats = [f['geometry']['coordinates'][1] for f in features]
+            lons = [f['geometry']['coordinates'][0] for f in features]
+            center = [sum(lats)/len(lats), sum(lons)/len(lons)]
+        else:
+            center = [43.343, 17.807]  # Default center
+        
+        return jsonify({
+            'type': 'FeatureCollection',
+            'features': features,
+            'center': center
+        })
         
     except Exception as e:
-        app.logger.error(f"Error generating trafostanica map: {str(e)}")
-        return f"Error generating map: {str(e)}", 500
+        app.logger.error(f"Error generating trafostanica data: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+
+@app.route('/get_ts_naziv_values', methods=['GET'])
+def get_ts_naziv_values():
+    try:
+        # Get search term from query parameters
+        search_term = request.args.get('search', '').lower()
+        
+        # Use a set for unique values and better performance
+        ts_naziv_values = set()
+        missing_count = 0
+        
+        for feature in data['features']:
+            try:
+                ts_naziv = feature['properties'].get('TS_NAZIV')
+                if ts_naziv:
+                    # Only add if it matches the search term (if provided)
+                    if not search_term or search_term in ts_naziv.lower():
+                        ts_naziv_values.add(ts_naziv)
+                else:
+                    missing_count += 1
+            except KeyError:
+                missing_count += 1
+        
+        if missing_count:
+            app.logger.warning(f"{missing_count} features are missing the 'TS_NAZIV' key.")
+        
+        # Return sorted list of matching values
+        return jsonify(sorted(list(ts_naziv_values)))
+    
+    except Exception as e:
+        app.logger.error(f"Error in get_ts_naziv_values: {str(e)}")
+        return jsonify({"error": "An error occurred while processing TS_NAZIV values."}), 500
+
+@app.route('/filter_data_by_ts_naziv', methods=['GET'])
+def filter_data_by_ts_naziv():
+    try:
+        ts_naziv = request.args.get('ts_naziv')
+        if not ts_naziv:
+            return jsonify({"error": "Invalid TS_NAZIV value"}), 400
+        
+        # Use list comprehension with generator for better memory efficiency
+        filtered_features = [
+            feature for feature in data['features']
+            if feature['properties'].get('TS_NAZIV') == ts_naziv
+        ]
+        
+        if not filtered_features:
+            return jsonify({"error": "No features found for this TS_NAZIV"}), 404
+        
+        # Get coordinates from first feature
+        first_coords = filtered_features[0]['geometry']['coordinates']
+        
+        return jsonify({
+            "features": filtered_features,
+            "center": [first_coords[1], first_coords[0]]  # [lat, lon]
+        })
+        
+    except Exception as e:
+        app.logger.error(f"Error in filter_data_by_ts_naziv: {str(e)}")
+        return jsonify({"error": "An error occurred while filtering data."}), 500
+
+
+
+
+
+PDF_FOLDER = os.path.join(app.static_folder, "pdfs")
+ALLOWED_PDFS = {
+    "Jednopolna_shema_PJD_Mostar.pdf": "Jednopolna shema PJD Mostar",
+    "Jednopolna_shema_PJD_Jablanica.pdf": "Jednopolna shema PJD Jablanica",
+    "Jednopolna_shema_PJD_Konjic.pdf": "Jednopolna shema PJD Konjic",
+}
+
+@app.route("/download_pdf/<path:filename>")
+def download_pdf(filename):
+    filename_safe = secure_filename(filename)
+    if filename_safe not in ALLOWED_PDFS:
+        app.logger.warning(f"Attempt to access unauthorized file: {filename_safe}")
+        return abort(404)
+    return send_from_directory(directory=PDF_FOLDER, filename=filename_safe, as_attachment=True)
+
 
 
 if __name__ == '__main__':
