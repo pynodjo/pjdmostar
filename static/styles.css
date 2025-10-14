@@ -684,3 +684,31 @@ select:focus-visible {
         border: 2px solid #1565C0;
     }
 }
+
+.search-wrapper {
+    position: relative; /* crucial for positioning suggestions relative to input */
+    width: 100%;
+}
+
+.autocomplete-suggestions {
+    position: absolute;
+    top: 100%;          /* directly below input */
+    left: 0;
+    width: 100%;        /* match input width */
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    z-index: 9999;      /* appear above other elements */
+    display: none;      /* hide by default */
+}
+
+.autocomplete-suggestion {
+    padding: 8px 10px;
+    cursor: pointer;
+}
+
+.autocomplete-suggestion:hover {
+    background-color: #e0f0ff;
+}

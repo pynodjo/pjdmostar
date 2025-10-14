@@ -36,12 +36,13 @@
         <div id="result-serijski_broj" class="result"></div>
 
         <!-- Customer Search -->
-        <form id="kupac-form" class="search-form">
+        <form id="kupac-form">
             <label for="kupac">Pretraga po nazivu kupca:</label>
-            <input type="text" id="kupac" name="kupac" placeholder="Unesite naziv kupca">
-            <div id="kupac-suggestions" class="suggestions-container"></div>
+            <div class="search-wrapper"> <!-- wrap input -->
+                <input type="text" id="kupac" name="kupac" autocomplete="off">
+                <div id="kupac-suggestions" class="autocomplete-suggestions"></div>
+            </div>
             <button type="submit">Pretraga</button>
-            <div id="kupac-error" class="validation-error"></div>
         </form>
         <div id="result-kupac" class="result"></div>
         <button class="bottom-button" onclick="location.reload();">Osvježi</button>
@@ -410,32 +411,43 @@
             SearchHandlers.setupAutocomplete('trafostanica', 'trafostanica-suggestions', '/get_trafostanica_suggestions');
             SearchHandlers.setupAutocomplete('rastavljac', 'rastavljac-suggestions', '/get_rastavljac_suggestions');
             
+
             // Kupac form submission
             document.getElementById('kupac-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
-                const input = document.getElementById('kupac').value.trim();
-                const match = input.match(/^(.*?)\s*\((\d+),/);
-                
+                const inputValue = document.getElementById('kupac').value.trim();
+
+                // Expecting input format: "KupacName (Serijski, Adresa)"
+                const match = inputValue.match(/^(.*?)\s*\((\d+),/);
+
                 if (!match) {
-                    document.getElementById('result-kupac').innerHTML = '<p>Nevažeći unos. Molimo odaberite kupca iz ponuđene liste.</p>';
+                    document.getElementById('result-kupac').innerHTML = 
+                        '<p class="error">Nevažeći unos. Molimo odaberite kupca iz ponuđene liste.</p>';
                     return;
                 }
-                
+
+                const kupacName = match[1].trim();
+                const serijski = match[2];
+
                 try {
                     const response = await fetch('/get_coordinates_by_kupac', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body: `kupac=${encodeURIComponent(match[1].trim())}&serijski=${encodeURIComponent(match[2])}`
+                        body: `kupac=${encodeURIComponent(kupacName)}&serijski=${encodeURIComponent(serijski)}`
                     });
-                    
+
                     const data = await response.json();
+
                     document.getElementById('result-kupac').innerHTML = 
                         data.error ? `<p class="error">${data.error}</p>` : Utils.createResultTable(data);
+
                 } catch (error) {
-                    console.error('Error:', error);
-                    document.getElementById('result-kupac').innerHTML = '<p>Greška prilikom pretrage.</p>';
+                    console.error('Error during fetch:', error);
+                    document.getElementById('result-kupac').innerHTML = 
+                        '<p class="error">Greška prilikom pretrage.</p>';
                 }
             });
+ 
 
             // Trafostanica form
             document.getElementById('trafostanica-form').addEventListener('submit', async (e) => {

@@ -215,24 +215,23 @@ def get_coordinates_by_serijski_broj():
 
 @app.route('/get_customer_suggestions', methods=['POST'])
 def get_customer_suggestions():
-    kupac_input = request.form.get('kupac', '').strip()
+    kupac_input = request.form.get('input', '').strip()
     
     if len(kupac_input) < 3:
         return jsonify([])
+
+    pattern = re.compile(re.escape(kupac_input), re.IGNORECASE)
+    suggestions = []
+
+    for kupac, info_list in kupac_to_info.items():
+        if pattern.search(kupac):
+            for record in info_list:
+                suggestions.append(f"{kupac} ({record['Serijski']}, {record['Adresa']})")
     
-    pattern = re.compile(f'.*{re.escape(kupac_input)}.*', re.IGNORECASE)
-    matches = []
-    
-    for kupac, info in kupac_to_info.items():
-        if pattern.match(kupac):
-            for record in info:
-                matches.append({
-                    'kupac': kupac,
-                    'serijski': record['Serijski'],
-                    'adresa': record['Adresa']
-                })
-    
-    return jsonify(matches[:10])
+    return jsonify(suggestions[:10])
+
+
+
 
 @app.route('/get_coordinates_by_kupac', methods=['POST'])
 def get_coordinates_by_kupac():
