@@ -1,29 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
-    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
-    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pojedinačna pretraga</title>
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
-
 <body>
-
+    <!-- Search Forms Container -->
     <div class="container">
         <h1>Pretraga aktivnih kupaca</h1>
 
-        <!-- Form to search by Šifra -->
-        <form id="sifra-form">
+        <!-- Šifra Search -->
+        <form id="sifra-form" class="search-form">
             <label for="sifra">Pretraga po šifri mjernog mjesta:</label>
             <input type="text" id="sifra" name="sifra" placeholder="Unesite šifru mjernog mjesta">
             <button type="submit">Pretraga</button>
@@ -31,8 +26,8 @@
         </form>
         <div id="result-sifra" class="result"></div>
 
-        <!-- Form to search by Serijski Broj -->
-        <form id="serijski_broj-form">
+        <!-- Serijski Broj Search -->
+        <form id="serijski_broj-form" class="search-form">
             <label for="serijski_broj">Pretraga po serijskom broju brojila:</label>
             <input type="text" id="serijski_broj" name="serijski_broj" placeholder="Unesite serijski broj brojila">
             <button type="submit">Pretraga</button>
@@ -40,62 +35,58 @@
         </form>
         <div id="result-serijski_broj" class="result"></div>
 
-        <!-- New form for customer search -->
-        <form id="kupac-form">
+        <!-- Customer Search -->
+        <form id="kupac-form" class="search-form">
             <label for="kupac">Pretraga po nazivu kupca:</label>
-            <input type="text" id="kupac" name="kupac" list="kupac-suggestions" placeholder="Unesite naziv kupca">
-            <datalist id="kupac-suggestions"></datalist>
+            <input type="text" id="kupac" name="kupac" placeholder="Unesite naziv kupca">
+            <div id="kupac-suggestions" class="suggestions-container"></div>
             <button type="submit">Pretraga</button>
             <div id="kupac-error" class="validation-error"></div>
         </form>
         <div id="result-kupac" class="result"></div>
-        <button class="bottom-button" onclick="window.location.reload();">Osvježi</button>
+        <button class="bottom-button" onclick="location.reload();">Osvježi</button>
     </div>
-    <div style="height: 20px;"></div> <!-- Empty row -->
-    <!-- Pretraga lokacija po OJ i OH -->
 
+    <div style="height: 20px;"></div>
+
+    <!-- Geographic Display by OH -->
     <div class="container">
         <h1>Geografski prikaz mm po OH</h1>
-        <select id="oj-dropdown" onchange="fetchOHValues()">
+        <select id="oj-dropdown">
             <option value="">--Odaberite OJ--</option>
             <option value="301">PJD Mostar</option>
             <option value="302">PJD Konjic</option>
             <option value="303">PJD Jablanica</option>
         </select>
-
-        <select id="oh-dropdown" onchange="enableSearchButton()" disabled>
+        <select id="oh-dropdown" disabled>
             <option value="">--Odaberite OH--</option>
         </select>
-
-        <button id="search-button" onclick="performSearch()" disabled>Pretraga</button>
-
-        <div id="status"></div>
+        <button id="search-button-oh" disabled>Pretraga</button>
+        <div id="status-oh"></div>
         <div id="map-container-OH"></div>
-        <button class="bottom-button" onclick="window.location.reload();">Osvježi</button>
+        <button class="bottom-button" onclick="location.reload();">Osvježi</button>
     </div>
-    <div style="height: 20px;"></div> <!-- Empty row -->
 
-    <!-- Pretraga svih kupaca iz baze deeo-union soee -->
+    <div style="height: 20px;"></div>
+
+    <!-- Geographic Display by TS -->
     <div class="container">
         <h1>Geografski prikaz mm po TS</h1>
-        
         <div class="search-container">
             <input type="text" id="ts-search" placeholder="Pretraži trafostanice..." class="search-input">
             <select id="ts-naziv-dropdown" size="5" class="searchable-dropdown">
                 <option value="">--Odaberite Trafostanicu (TS_NAZIV)--</option>
             </select>
         </div>
-        
-        <button id="search-button" onclick="fetchMapTSMM()">Pretraga</button>
-        
-        <div id="status"></div>
-        <div id="map-container-TSMM" style="height: 500px; width: 100%; margin-top: 20px;"></div>
-        <button class="bottom-button" onclick="window.location.reload();">Osvježi</button>
+        <button id="search-button-ts">Pretraga</button>
+        <div id="status-ts"></div>
+        <div id="map-container-TSMM"></div>
+        <button class="bottom-button" onclick="location.reload();">Osvježi</button>
     </div>
 
-    <div style="height: 20px;"></div> <!-- Empty row -->    
+    <div style="height: 20px;"></div>
 
-    <!-- Pretraga podataka trafostanica -->
+    <!-- Trafostanica Search -->
     <div class="container">
         <h1>Pretraga podataka trafostanica</h1>
         <form id="trafostanica-form">
@@ -108,429 +99,139 @@
             <div id="trafostanica-error" class="validation-error"></div>
         </form>
         <div id="result-trafostanica" class="result"></div>
-        <button class="bottom-button" onclick="window.location.reload();">Osvježi</button>
+        <button class="bottom-button" onclick="location.reload();">Osvježi</button>
     </div>
-    <div style="height: 20px;"></div> <!-- Empty row -->
-    <!-- Prikaz svih trafostanica -->
 
+    <div style="height: 20px;"></div>
+
+    <!-- Rastavljač Search -->
+    <div class="container">
+        <h1>Pretraga rastavljača</h1>
+        <form id="rastavljac-form">
+            <label for="rastavljac">Pretraga po nazivu ili šifri rastavljača:</label>
+            <div class="search-wrapper">
+                <input type="text" id="rastavljac" name="rastavljac" placeholder="Unesite naziv ili šifru (min 3 znaka)">
+                <div id="rastavljac-suggestions" class="suggestions-container"></div>
+            </div>
+            <button type="submit">Pretraga</button>
+            <div id="rastavljac-error" class="validation-error"></div>
+        </form>
+        <div id="result-rastavljac" class="result"></div>
+        <button class="bottom-button" onclick="location.reload();">Osvježi</button>
+    </div>
+
+    <!-- All Trafostanice Map -->
     <div class="container">
         <h1>Geografski prikaz svih trafostanica</h1>
-        <button id="view-all-btn" class="map-button" onclick="loadAllTrafostanice()">Prikaži sve trafostanice na mapi</button>
-    
-        <div id="status"></div>
+        <button id="view-all-btn" class="map-button">Prikaži sve trafostanice na mapi</button>
+        <div id="status-trafostanica"></div>
         <div id="map-container-trafostanica"></div>
-        <button class="bottom-button" onclick="window.location.reload();">Osvježi</button>
-    </div>    
+        <button class="bottom-button" onclick="location.reload();">Osvježi</button>
+    </div>
 
-
+    <!-- PDF Downloads -->
     <div class="container" style="margin-top:20px;">
         <h1>Jednopolne sheme PJD</h1>
         <p>Preuzmite sheme (PDF):</p>
         <ul class="list-unstyled">
-            <li>
-                <button class="bottom-button" onclick="window.location.href='{{ url_for('static', filename='pdfs/Jednopolna_shema_PJD_Mostar.pdf') }}'">
-                    Jednopolna shema PJD Mostar
-                </button>
-            </li>
-            <li>
-                <button class="bottom-button" onclick="window.location.href='{{ url_for('static', filename='pdfs/Jednopolna_shema_PJD_Konjic.pdf') }}'">
-                    Jednopolna shema PJD Konjic
-                </button>
-            </li>
-            <li>
-                <button class="bottom-button" onclick="window.location.href='{{ url_for('static', filename='pdfs/Jednopolna_shema_PJD_Jablanica.pdf') }}'">
-                    Jednopolna shema PJD Jablanica
-                </button>
-            </li>
-        </ul>   
-    </div>   
-
-
-    <div class="footer">
-        <p>© ED Mostar 2025</p>
-        <small>Ažurirano 02.09.2025. v2pdfs</small>
+            <li><button class="bottom-button" onclick="location.href='{{ url_for('static', filename='pdfs/Jednopolna_shema_PJD_Mostar.pdf') }}'">Jednopolna shema PJD Mostar</button></li>
+            <li><button class="bottom-button" onclick="location.href='{{ url_for('static', filename='pdfs/Jednopolna_shema_PJD_Konjic.pdf') }}'">Jednopolna shema PJD Konjic</button></li>
+            <li><button class="bottom-button" onclick="location.href='{{ url_for('static', filename='pdfs/Jednopolna_shema_PJD_Jablanica.pdf') }}'">Jednopolna shema PJD Jablanica</button></li>
+        </ul>
     </div>
 
+    <!-- Footer -->
+    <div class="footer">
+        <p>© ED Mostar 2025</p>
+        <small>Ažurirano 15.10.2025.</small>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+    
     <script>
-        function showValidationError(inputId, errorId, message) {
-            document.getElementById(inputId).classList.add('field-error');
-            document.getElementById(errorId).textContent = message;
-        }
-
-        function clearValidationError(inputId, errorId) {
-            document.getElementById(inputId).classList.remove('field-error');
-            document.getElementById(errorId).textContent = '';
-        }
-
-        // Function for searching by Šifra mjernog mjesta
-        document.getElementById('sifra-form').addEventListener('submit', function (event) {
-            event.preventDefault();
-            const sifra = document.getElementById('sifra').value.trim();
-
-            // Check for invalid input
-            const validInput = /^[0-9]+$/;
-            if (!sifra) {
-                showValidationError('sifra', 'sifra-error', 'Molimo unesite šifru mjernog mjesta.');
-                return;
-            }
-            if (!validInput.test(sifra)) {
-                showValidationError('sifra', 'sifra-error', 'Unos može sadržavati samo brojeve.');
-                return;
-            }
-
-            clearValidationError('sifra', 'sifra-error');
-            console.log('Submitting search by Šifra with value:', sifra);
-            fetch('/get_coordinates_by_sifra', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `sifra=${encodeURIComponent(sifra)}`
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const resultDiv = document.getElementById('result-sifra');
-                    if (data.url) {
-                        resultDiv.innerHTML = `
-                                            <table>
-                                                <tr><td class="bold-header">Lokacija:</td><td><a href="${data.url}" target="_blank">Google Maps link</a><br></td></tr>
-                                                <tr><td class="bold-header">Kupac:</td><td>${data.additional_info['Kupac'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Adresa:</td><td>${data.additional_info['Adresa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tip brojila:</td><td>${data.additional_info['Tip brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina baždarenja:</td><td>${data.additional_info['Godina baždarenja'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina proizvodnje:</td><td>${data.additional_info['Godina proizvodnje'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Datum montaže:</td><td>${data.additional_info['Datum montaže'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Serijski broj brojila:</td><td>${data.additional_info['Serijski broj brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Šifra mjernog mjesta:</td><td>${data.additional_info['Šifra mjernog mjesta'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tarifna grupa:</td><td>${data.additional_info['Tarifna grupa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Angažovana snaga:</td><td>${data.additional_info['Angažovana snaga'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Naziv trafostanice:</td><td>${data.additional_info['Naziv trafostanice'] || 'N/A'}</td></tr>
-                                            </table>
-                                        `;
-                    } else if (Object.keys(data.additional_info).length > 0) {
-                        resultDiv.innerHTML = `
-                                            <p class="error">Lokacija nije pronađena, ali su sljedeći podaci dostupni:</p>
-                                            <table>
-                                                <tr><td class="bold-header">Kupac:</td><td>${data.additional_info['Kupac'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Adresa:</td><td>${data.additional_info['Adresa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tip brojila:</td><td>${data.additional_info['Tip brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina baždarenja:</td><td>${data.additional_info['Godina baždarenja'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina proizvodnje:</td><td>${data.additional_info['Godina proizvodnje'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Datum montaže:</td><td>${data.additional_info['Datum montaže'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Serijski broj brojila:</td><td>${data.additional_info['Serijski broj brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Šifra mjernog mjesta:</td><td>${data.additional_info['Šifra mjernog mjesta'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tarifna grupa:</td><td>${data.additional_info['Tarifna grupa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Angažovana snaga:</td><td>${data.additional_info['Angažovana snaga'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Naziv trafostanice:</td><td>${data.additional_info['Naziv trafostanice'] || 'N/A'}</td></tr>
-                                            </table>
-                                        `;
-                    } else {
-                        resultDiv.innerHTML = '<p>Šifra mjernog mjesta nije pronađena u bazi podataka. Provjerite tačnost unesenih podataka.</p>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error during fetch for Šifra search:', error);
-                    document.getElementById('result-sifra').innerHTML = '<p>Šifra mjernog mjesta nije pronađena u bazi podataka. Provjerite tačnost unesenih podataka te da li je mjerno mjesto uneseno u bazu podataka.</p>';
-                });
-        });
-
-        // Function for searching by Serijski broj brojila
-        document.getElementById('serijski_broj-form').addEventListener('submit', function (event) {
-            event.preventDefault();
-            const serijski_broj = document.getElementById('serijski_broj').value.trim();
-            const serijski_brojErrorId = 'serijski-broj-error';
-
-            // Check for invalid input
-            const validInput = /^[0-9]+$/;
-            if (!serijski_broj) {
-                showValidationError('serijski_broj', serijski_brojErrorId, 'Molimo unesite serijski broj brojila.');
-                return;
-            }
-            if (!validInput.test(serijski_broj)) {
-                showValidationError('serijski_broj', serijski_brojErrorId, 'Unos može sadržavati samo brojeve.');
-                return;
-            }
-
-            clearValidationError('serijski_broj', serijski_brojErrorId);
-            console.log('Submitting search by Serijski Broj with value:', serijski_broj);
-            fetch('/get_coordinates_by_serijski_broj', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `serijski_broj=${encodeURIComponent(serijski_broj)}`
-            })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const resultDiv = document.getElementById('result-serijski_broj');
-                    if (data.url) {
-                        resultDiv.innerHTML = `
-                                            <table>
-                                                <tr><td class="bold-header">Lokacija:</td><td><a href="${data.url}" target="_blank">Google Maps link</a><br></td></tr>
-                                                <tr><td class="bold-header">Kupac:</td><td>${data.additional_info['Kupac'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Adresa:</td><td>${data.additional_info['Adresa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tip brojila:</td><td>${data.additional_info['Tip brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina baždarenja:</td><td>${data.additional_info['Godina baždarenja'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina proizvodnje:</td><td>${data.additional_info['Godina proizvodnje'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Datum montaže:</td><td>${data.additional_info['Datum montaže'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Serijski broj brojila:</td><td>${data.additional_info['Serijski broj brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Šifra mjernog mjesta:</td><td>${data.additional_info['Šifra mjernog mjesta'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tarifna grupa:</td><td>${data.additional_info['Tarifna grupa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Angažovana snaga:</td><td>${data.additional_info['Angažovana snaga'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Naziv trafostanice:</td><td>${data.additional_info['Naziv trafostanice'] || 'N/A'}</td></tr>
-                                            </table>
-                                        `;
-                    } else if (Object.keys(data.additional_info).length > 0) {
-                        resultDiv.innerHTML = `
-                                            <p class="error">Lokacija nije pronađena, ali su sljedeći podaci dostupni:</p>
-                                            <table>
-                                                <tr><td class="bold-header">Kupac:</td><td>${data.additional_info['Kupac'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Adresa:</td><td>${data.additional_info['Adresa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tip brojila:</td><td>${data.additional_info['Tip brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina baždarenja:</td><td>${data.additional_info['Godina baždarenja'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina proizvodnje:</td><td>${data.additional_info['Godina proizvodnje'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Datum montaže:</td><td>${data.additional_info['Datum montaže'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Serijski broj brojila:</td><td>${data.additional_info['Serijski broj brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Šifra mjernog mjesta:</td><td>${data.additional_info['Šifra mjernog mjesta'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tarifna grupa:</td><td>${data.additional_info['Tarifna grupa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Angažovana snaga:</td><td>${data.additional_info['Angažovana snaga'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Naziv trafostanice:</td><td>${data.additional_info['Naziv trafostanice'] || 'N/A'}</td></tr>
-                                            </table>
-                                        `;
-                    } else {
-                        resultDiv.innerHTML = '<p>Serijski broj brojila nije pronađen u bazi podataka. Provjerite tačnost unesenih podataka.</p>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error during fetch for Serijski Broj search:', error);
-                    document.getElementById('result-serijski_broj').innerHTML = '<p>Serijski broj brojila nije pronađen u bazi podataka. Provjerite tačnost unesenih podataka te da li je mjerno mjesto uneseno u bazu podataka.</p>';
-                });
-        });
-
-        // New JavaScript for customer search
-        document.addEventListener('DOMContentLoaded', function () {
-            const kupacInput = document.getElementById('kupac');
-            const suggestionsContainer = document.createElement('div');
-            suggestionsContainer.id = 'suggestions-container';
-            suggestionsContainer.style.display = 'none';
-            kupacInput.parentNode.insertBefore(suggestionsContainer, kupacInput.nextSibling);
-
-            kupacInput.addEventListener('input', function (event) {
-                const kupacInputValue = event.target.value.trim();
-                if (kupacInputValue.length >= 3) {
-                    fetch('/get_customer_suggestions', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `kupac=${encodeURIComponent(kupacInputValue)}`
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            suggestionsContainer.innerHTML = '';
-                            data.forEach(suggestion => {
-                                const suggestionElement = document.createElement('div');
-                                suggestionElement.textContent = `${suggestion.kupac} (${suggestion.serijski}, ${suggestion.adresa})`;
-                                suggestionElement.className = 'suggestion-item';
-                                suggestionElement.addEventListener('click', function () {
-                                    kupacInput.value = this.textContent;
-                                    suggestionsContainer.style.display = 'none';
-                                });
-                                suggestionsContainer.appendChild(suggestionElement);
-                            });
-                            suggestionsContainer.style.display = data.length > 0 ? 'block' : 'none';
-                        });
-                } else {
-                    suggestionsContainer.style.display = 'none';
-                }
-            });
-
-            // Hide suggestions when clicking outside
-            document.addEventListener('click', function (event) {
-                if (event.target !== kupacInput && event.target !== suggestionsContainer) {
-                    suggestionsContainer.style.display = 'none';
-                }
-            });
-
-            document.getElementById('kupac-form').addEventListener('submit', function (event) {
-                event.preventDefault();
-                const kupacInput = document.getElementById('kupac').value.trim();
-                const match = kupacInput.match(/^(.*?)\s*\((\d+),/); // Adjust regex to capture both kupac and serijski
-
-                if (match) {
-                    const kupac = match[1].trim();
-                    const serijski = match[2]; // Extract the serijski from the match
-
-                    fetch('/get_coordinates_by_kupac', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                        },
-                        body: `kupac=${encodeURIComponent(kupac)}&serijski=${encodeURIComponent(serijski)}`
-                    })
-                        .then(response => response.json())
-                        .then(data => {
-                            const resultDiv = document.getElementById('result-kupac');
-                            if (data.url) {
-                                resultDiv.innerHTML = `
-                                            <table>
-                                                <tr><td class="bold-header">Lokacija:</td><td><a href="${data.url}" target="_blank">Google Maps link</a></td></tr>
-                                                <tr><td class="bold-header">Kupac:</td><td>${data.additional_info['Kupac'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Adresa:</td><td>${data.additional_info['Adresa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tip brojila:</td><td>${data.additional_info['Tip brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina baždarenja:</td><td>${data.additional_info['Godina baždarenja'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina proizvodnje:</td><td>${data.additional_info['Godina proizvodnje'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Datum montaže:</td><td>${data.additional_info['Datum montaže'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Serijski broj brojila:</td><td>${data.additional_info['Serijski broj brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Šifra mjernog mjesta:</td><td>${data.additional_info['Šifra mjernog mjesta'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tarifna grupa:</td><td>${data.additional_info['Tarifna grupa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Angažovana snaga:</td><td>${data.additional_info['Angažovana snaga'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Naziv trafostanice:</td><td>${data.additional_info['Naziv trafostanice'] || 'N/A'}</td></tr>
-                                            </table>
-                                        `;
-                            } else if (Object.keys(data.additional_info).length > 0) {
-                                resultDiv.innerHTML = `
-                                            <p class="error">Lokacija nije pronađena, ali su sljedeći podaci dostupni:</p>
-                                            <table>
-                                                <tr><td class="bold-header">Kupac:</td><td>${data.additional_info['Kupac'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Adresa:</td><td>${data.additional_info['Adresa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tip brojila:</td><td>${data.additional_info['Tip brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina baždarenja:</td><td>${data.additional_info['Godina baždarenja'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Godina proizvodnje:</td><td>${data.additional_info['Godina proizvodnje'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Datum montaže:</td><td>${data.additional_info['Datum montaže'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Serijski broj brojila:</td><td>${data.additional_info['Serijski broj brojila'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Šifra mjernog mjesta:</td><td>${data.additional_info['Šifra mjernog mjesta'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Tarifna grupa:</td><td>${data.additional_info['Tarifna grupa'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Angažovana snaga:</td><td>${data.additional_info['Angažovana snaga'] || 'N/A'}</td></tr>
-                                                <tr><td class="bold-header">Naziv trafostanice:</td><td>${data.additional_info['Naziv trafostanice'] || 'N/A'}</td></tr>
-                                            </table>
-                                        `;
-                            } else if (data.error) {
-                                resultDiv.innerHTML = `<p class="error">${data.error}</p>`;
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error during fetch for Kupac search:', error);
-                            document.getElementById('result-kupac').innerHTML = '<p>Greška prilikom pretrage. Molimo pokušajte ponovo.</p>';
-                        });
-                } else {
-                    document.getElementById('result-kupac').innerHTML = '<p>Nevažeći unos. Molimo odaberite kupca iz ponuđene liste.</p>';
-                }
-            });
-        });
-
+        // ==============================================
+        // UTILITY FUNCTIONS
+        // ==============================================
         
-        
-        
-        function fetchOHValues() {
-            const oj = document.getElementById('oj-dropdown').value;
-            const ohDropdown = document.getElementById('oh-dropdown');
-            const searchButton = document.getElementById('search-button');
-            const statusDiv = document.getElementById('status');
+        const Utils = {
+            // Sanitize HTML to prevent XSS
+            escapeHtml: (text) => {
+                const map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text ? String(text).replace(/[&<>"']/g, m => map[m]) : 'N/A';
+            },
 
-            ohDropdown.innerHTML = '<option value="">--Odaberite OH--</option>';
-            ohDropdown.disabled = true;
-            searchButton.disabled = true;
-            statusDiv.textContent = '';
+            // Debounce function
+            debounce: (func, wait) => {
+                let timeout;
+                return function executedFunction(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            },
 
-            if (!oj) {
-                console.log('No OJ selected');
-                return;
+            // Validation
+            showValidationError: (inputId, errorId, message) => {
+                document.getElementById(inputId).classList.add('field-error');
+                document.getElementById(errorId).textContent = message;
+            },
+
+            clearValidationError: (inputId, errorId) => {
+                document.getElementById(inputId).classList.remove('field-error');
+                document.getElementById(errorId).textContent = '';
+            },
+
+            // Create result table HTML
+            createResultTable: (data) => {
+                const info = data.additional_info || {};
+                return `
+                    <table>
+                        ${data.url ? `<tr><td class="bold-header">Lokacija:</td><td><a href="${Utils.escapeHtml(data.url)}" target="_blank">Google Maps link</a></td></tr>` : ''}
+                        <tr><td class="bold-header">Kupac:</td><td>${Utils.escapeHtml(info['Kupac'])}</td></tr>
+                        <tr><td class="bold-header">Adresa:</td><td>${Utils.escapeHtml(info['Adresa'])}</td></tr>
+                        <tr><td class="bold-header">Tip brojila:</td><td>${Utils.escapeHtml(info['Tip brojila'])}</td></tr>
+                        <tr><td class="bold-header">Godina baždarenja:</td><td>${Utils.escapeHtml(info['Godina baždarenja'])}</td></tr>
+                        <tr><td class="bold-header">Godina proizvodnje:</td><td>${Utils.escapeHtml(info['Godina proizvodnje'])}</td></tr>
+                        <tr><td class="bold-header">Datum montaže:</td><td>${Utils.escapeHtml(info['Datum montaže'])}</td></tr>
+                        <tr><td class="bold-header">Serijski broj brojila:</td><td>${Utils.escapeHtml(info['Serijski broj brojila'])}</td></tr>
+                        <tr><td class="bold-header">Šifra mjernog mjesta:</td><td>${Utils.escapeHtml(info['Šifra mjernog mjesta'])}</td></tr>
+                        <tr><td class="bold-header">Tarifna grupa:</td><td>${Utils.escapeHtml(info['Tarifna grupa'])}</td></tr>
+                        <tr><td class="bold-header">Angažovana snaga:</td><td>${Utils.escapeHtml(info['Angažovana snaga'])}</td></tr>
+                        <tr><td class="bold-header">Naziv trafostanice:</td><td>${Utils.escapeHtml(info['Naziv trafostanice'])}</td></tr>
+                    </table>
+                `;
             }
+        };
 
-            console.log('Fetching OH values for OJ:', oj);
-            statusDiv.textContent = 'Loading OH values...';
+        // ==============================================
+        // MAP MANAGER
+        // ==============================================
+        
+        const MapManager = {
+            maps: {},
 
-            // Using the correct URL format with template literal
-            fetch(`/get_oh_values_by_oj/${oj}`)
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Received OH values:', data);
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    if (Array.isArray(data) && data.length === 0) {
-                        ohDropdown.innerHTML = '<option value="">No OH values available</option>';
-                        statusDiv.textContent = 'No OH values found for this OJ';
-                    } else {
-                        data.forEach(oh => {
-                            const option = document.createElement('option');
-                            option.value = oh;
-                            option.textContent = oh;
-                            ohDropdown.appendChild(option);
-                        });
-                        statusDiv.textContent = 'OH values loaded successfully';
-                    }
-                    ohDropdown.disabled = false;
-                })
-                .catch(error => {
-                    console.error('Error fetching OH values:', error);
-                    ohDropdown.innerHTML = '<option value="">Error loading OH values</option>';
-                    ohDropdown.disabled = false;
-                    statusDiv.textContent = `Error loading OH values: ${error.message}`;
-                });
-        }
-
-
-        function enableSearchButton() {
-            const ohValue = document.getElementById('oh-dropdown').value;
-            const searchButton = document.getElementById('search-button');
-            searchButton.disabled = !ohValue;
-        }
-
-        async function performSearch() {
-            const ojValue = document.getElementById('oj-dropdown').value;
-            const ohValue = document.getElementById('oh-dropdown').value;
-            const mapContainer = document.getElementById('map-container-OH');
-            const statusDiv = document.getElementById('status');
-
-            console.log('Performing search with OJ:', ojValue, 'OH:', ohValue);
-            
-            try {
-                statusDiv.textContent = 'Učitavanje mape...';
-                mapContainer.innerHTML = '';
-
-                // Create map container
-                const mapDiv = document.createElement('div');
-                mapDiv.style.height = '500px';
-                mapContainer.appendChild(mapDiv);
-
-                // Fetch data from backend
-                const response = await fetch(`/search_by_oj_oh?oj=${encodeURIComponent(ojValue)}&oh=${encodeURIComponent(ohValue)}`);
-                
-                if (!response.ok) {
-                    throw new Error('Network response was not ok');
+            createMap: (containerId, center = [43.3438, 17.8078], zoom = 13) => {
+                // Clean up existing map
+                if (MapManager.maps[containerId]) {
+                    MapManager.maps[containerId].remove();
                 }
 
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error);
-                }
+                const map = L.map(containerId).setView(center, zoom);
+                MapManager.maps[containerId] = map;
 
-                // Initialize map
-                currentMap = L.map(mapDiv).setView(data.center, 13);
-
-                // Define base maps
                 const baseMaps = {
                     "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                         maxZoom: 18,
-                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+                        attribution: 'Tiles &copy; Esri'
                     }),
                     "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         maxZoom: 21,
@@ -538,11 +239,40 @@
                     })
                 };
 
-                // Add default layer
-                baseMaps["Satellite"].addTo(currentMap);
+                baseMaps["Satellite"].addTo(map);
+                L.control.layers(baseMaps, null, { position: 'topright' }).addTo(map);
+                L.control.scale().addTo(map);
 
-                // Create marker cluster group
-                const markers = L.markerClusterGroup({
+                return map;
+            },
+
+            addFullscreenControl: (map, containerId) => {
+                const fullscreenButton = L.control({ position: 'topright' });
+                
+                fullscreenButton.onAdd = function () {
+                    const btn = L.DomUtil.create('button', 'custom-fullscreen-btn');
+                    btn.innerHTML = '🗖';
+                    btn.title = 'View Fullscreen';
+                    
+                    btn.onclick = function() {
+                        const elem = document.getElementById(containerId);
+                        if (!document.fullscreenElement) {
+                            elem.requestFullscreen?.() || elem.webkitRequestFullscreen?.();
+                            btn.innerHTML = '🗗';
+                        } else {
+                            document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+                            btn.innerHTML = '🗖';
+                        }
+                    };
+                    
+                    return btn;
+                };
+                
+                fullscreenButton.addTo(map);
+            },
+
+            createMarkerCluster: () => {
+                return L.markerClusterGroup({
                     showCoverageOnHover: true,
                     zoomToBoundsOnClick: true,
                     spiderfyOnMaxZoom: true,
@@ -553,8 +283,7 @@
                     chunkedLoading: true,
                     iconCreateFunction: function(cluster) {
                         const count = cluster.getChildCount();
-                        let size = count < 10 ? 30 : count < 100 ? 35 : 40;
-                        
+                        const size = count < 10 ? 30 : count < 100 ? 35 : 40;
                         return L.divIcon({
                             html: `<div><span>${count}</span></div>`,
                             className: 'marker-cluster-custom',
@@ -562,647 +291,441 @@
                         });
                     }
                 });
-
-                // Add markers to cluster group
-                data.features.forEach(feature => {
-                    const coords = feature.geometry.coordinates;
-                    const props = feature.properties;
-                    
-                    const popupContent = `
-                        <div style="font-family: Arial, sans-serif; min-width: 200px;">
-                            <h4 style="margin-bottom: 10px;">Detalji mjernog mjesta</h4>
-                            <p><strong>Kupac:</strong> ${props.IME_PREZIME || 'N/A'}</p>
-                            <p><strong>Adresa:</strong> ${props.ADRESA_MM || 'N/A'}</p>
-                            <p><strong>Šifra mjernog mjesta:</strong> ${props.SIFRA || 'N/A'}</p>
-                            <p><strong>Serijski broj:</strong> ${props.SERIJSKI || 'N/A'}</p>
-                            <p><strong>Tip:</strong> ${props.TIP || 'N/A'}</p>
-                            <p><strong>ROH:</strong> ${props.ROH || 'N/A'}</p>
-                        </div>
-                    `;
-                    
-                    const marker = L.marker([coords[1], coords[0]])
-                        .bindPopup(popupContent);
-                    
-                    markers.addLayer(marker);
-                });
-
-                // Add marker cluster to map
-                currentMap.addLayer(markers);
-
-                // Add custom fullscreen button
-                const fullscreenButton = L.control({position: 'topright'});
-                
-                fullscreenButton.onAdd = function (map) {
-                    const btn = L.DomUtil.create('button', 'custom-fullscreen-btn');
-                    btn.innerHTML = '🗖';
-                    btn.title = 'View Fullscreen';
-                    
-                    btn.onclick = function() {
-                        if (!document.fullscreenElement) {
-                            const elem = mapDiv;
-                            if (elem.requestFullscreen) {
-                                elem.requestFullscreen();
-                            } else if (elem.webkitRequestFullscreen) {
-                                elem.webkitRequestFullscreen();
-                            } else if (elem.msRequestFullscreen) {
-                                elem.msRequestFullscreen();
-                            }
-                            btn.innerHTML = '🗗';
-                        } else {
-                            if (document.exitFullscreen) {
-                                document.exitFullscreen();
-                            } else if (document.webkitExitFullscreen) {
-                                document.webkitExitFullscreen();
-                            } else if (document.msExitFullscreen) {
-                                document.msExitFullscreen();
-                            }
-                            btn.innerHTML = '🗖';
-                        }
-                    };
-                    
-                    return btn;
-                };
-                
-                fullscreenButton.addTo(currentMap);
-
-                // Add layer control
-                L.control.layers(baseMaps, null, {
-                    position: 'topright'
-                }).addTo(currentMap);
-
-                // Add scale control
-                L.control.scale().addTo(currentMap);
-
-                // Listen for fullscreen changes
-                document.addEventListener('fullscreenchange', function() {
-                    const btn = document.querySelector('.custom-fullscreen-btn');
-                    if (document.fullscreenElement) {
-                        btn.innerHTML = '🗗';
-                    } else {
-                        btn.innerHTML = '🗖';
-                    }
-                });
-
-                statusDiv.textContent = `Mapa uspješno učitana. Prikazano ${data.features.length} lokacija.`;
-            } catch (error) {
-                console.error('Error:', error);
-                statusDiv.textContent = `Došlo je do greške: ${error.message}`;
-                mapContainer.innerHTML = `<p class="error">Došlo je do greške pri učitavanju mape: ${error.message}</p>`;
             }
-        }
-
-        window.onload = function () {
-            console.log('Page loaded');
         };
 
-        // New JavaScript for trafostanica search
-        document.addEventListener('DOMContentLoaded', function () {
-            const trafostanicaInput = document.getElementById('trafostanica');
-            const suggestionsContainer = document.getElementById('trafostanica-suggestions');
-            let debounceTimeout;
+        // ==============================================
+        // SEARCH HANDLERS
+        // ==============================================
+        
+        const SearchHandlers = {
+            handleSimpleSearch: (formId, inputId, errorId, endpoint, validationRegex = /^[0-9]+$/) => {
+                document.getElementById(formId).addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const value = document.getElementById(inputId).value.trim();
+                    
+                    if (!value) {
+                        Utils.showValidationError(inputId, errorId, 'Molimo unesite vrijednost.');
+                        return;
+                    }
+                    
+                    if (!validationRegex.test(value)) {
+                        Utils.showValidationError(inputId, errorId, 'Unos može sadržavati samo brojeve.');
+                        return;
+                    }
+                    
+                    Utils.clearValidationError(inputId, errorId);
+                    
+                    try {
+                        const response = await fetch(endpoint, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: `${inputId}=${encodeURIComponent(value)}`
+                        });
+                        
+                        const data = await response.json();
+                        const resultDiv = document.getElementById(`result-${inputId}`);
+                        
+                        if (data.url || Object.keys(data.additional_info || {}).length > 0) {
+                            resultDiv.innerHTML = Utils.createResultTable(data);
+                            if (!data.url) {
+                                resultDiv.innerHTML = '<p class="error">Lokacija nije pronađena, ali su sljedeći podaci dostupni:</p>' + resultDiv.innerHTML;
+                            }
+                        } else {
+                            resultDiv.innerHTML = '<p>Podaci nisu pronađeni u bazi podataka.</p>';
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                        document.getElementById(`result-${inputId}`).innerHTML = '<p>Greška prilikom pretrage.</p>';
+                    }
+                });
+            },
 
-            console.log('DOM loaded, setting up trafostanica search...');
-
-            function debounceSearch(func, wait) {
-                clearTimeout(debounceTimeout);
-                debounceTimeout = setTimeout(func, wait);
-            }
-
-            function handleSuggestionClick(suggestion) {
-                console.log('Suggestion clicked:', suggestion);
-                trafostanicaInput.value = suggestion;
-                suggestionsContainer.style.display = 'none';
-            }
-
-            function updateSuggestions(suggestions) {
-                console.log('Updating suggestions:', suggestions);
-                suggestionsContainer.innerHTML = '';
-
-                if (suggestions && suggestions.length > 0) {
-                    suggestions.forEach(suggestion => {
-                        const div = document.createElement('div');
-                        div.textContent = suggestion;
-                        div.className = 'suggestion-item';
-                        div.addEventListener('click', () => handleSuggestionClick(suggestion));
-                        suggestionsContainer.appendChild(div);
-                    });
-                    suggestionsContainer.style.display = 'block';
-                } else {
-                    suggestionsContainer.style.display = 'none';
-                }
-            }
-
-            trafostanicaInput.addEventListener('input', function (event) {
-                const inputValue = event.target.value.trim();
-                console.log('Input value changed:', inputValue);
-
-                if (inputValue.length >= 3) {
-                    debounceSearch(() => {
-                        console.log('Sending search request for:', inputValue);
+            setupAutocomplete: (inputId, suggestionsId, endpoint, minChars = 3) => {
+                const input = document.getElementById(inputId);
+                const container = document.getElementById(suggestionsId);
+                
+                const fetchSuggestions = Utils.debounce(async (value) => {
+                    if (value.length < minChars) {
+                        container.style.display = 'none';
+                        return;
+                    }
+                    
+                    try {
                         const formData = new FormData();
-                        formData.append('input', inputValue);
-
-                        fetch('/get_trafostanica_suggestions', {
+                        formData.append('input', value);
+                        
+                        const response = await fetch(endpoint, {
                             method: 'POST',
                             body: formData
-                        })
-                            .then(response => {
-                                console.log('Response status:', response.status);
-                                return response.json();
-                            })
-                            .then(data => {
-                                console.log('Received suggestions data:', data);
-                                if (data.suggestions) {
-                                    updateSuggestions(data.suggestions);
-                                } else {
-                                    console.warn('No suggestions in response');
-                                    suggestionsContainer.style.display = 'none';
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error fetching suggestions:', error);
-                                suggestionsContainer.style.display = 'none';
+                        });
+                        
+                        const data = await response.json();
+                        const suggestions = data.suggestions || data;
+                        
+                        container.innerHTML = '';
+                        if (suggestions.length > 0) {
+                            suggestions.forEach(suggestion => {
+                                const div = document.createElement('div');
+                                div.textContent = typeof suggestion === 'string' ? suggestion : 
+                                    `${suggestion.kupac} (${suggestion.serijski}, ${suggestion.adresa})`;
+                                div.className = 'suggestion-item';
+                                div.onclick = () => {
+                                    input.value = div.textContent;
+                                    container.style.display = 'none';
+                                };
+                                container.appendChild(div);
                             });
-                    }, 300); // Debounce delay of 300ms
-                } else {
-                    suggestionsContainer.style.display = 'none';
-                }
-            });
-
-            // Hide suggestions when clicking outside
-            document.addEventListener('click', function (event) {
-                if (!trafostanicaInput.contains(event.target) && !suggestionsContainer.contains(event.target)) {
-                    console.log('Clicked outside suggestions');
-                    suggestionsContainer.style.display = 'none';
-                }
-            });
-
-            // Handle form submission
-            document.getElementById('trafostanica-form').addEventListener('submit', function (event) {
-                event.preventDefault();
-                console.log('Form submitted');
-
-                const trafostanicaValue = trafostanicaInput.value.trim();
-                console.log('Submitting search for:', trafostanicaValue);
-
-                fetch('/get_trafostanica_data', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ trafostanica: trafostanicaValue })
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Received search result:', data);
-                        const resultDiv = document.getElementById('result-trafostanica');
-
-                        if (data.google_maps_url) {
-                            resultDiv.innerHTML = `
-                                <table>
-                                    <tr><td class="bold-header">Lokacija:</td><td><a href="${data.google_maps_url}" target="_blank">Google Maps link</a></td></tr>
-                                    <tr><td class="bold-header">Naziv trafostanice:</td><td>${data.naziv || 'N/A'}</td></tr>
-                                    <tr><td class="bold-header">Snaga:</td>  <td>${data.snaga ? `${data.snaga} kVA` : 'N/A'}</td>
-                                    <tr><td class="bold-header">Broj transformatora:</td><td>${data.broj_transformatora || 'N/A'}</td></tr>
-                                    <tr><td class="bold-header">Konfiguracija SN postrojenja:</td><td>${data.konfiguracija_SN_postrojenja || 'N/A'}</td></tr>
-                                    <tr><td class="bold-header">Napojna trafostanica:</td><td>${data.napojna_trafostanica || 'N/A'}</td></tr>
-                                    <tr><td class="bold-header">Naziv SN odlaza:</td><td>${data.naziv_SN_odlaza || 'N/A'}</td></tr>
-                                    <tr><td class="bold-header">Tip trafostanice:</td><td>${data.tip_trafostanice || 'N/A'}</td></tr>
-                                    <tr><td class="bold-header">Poslovnica:</td><td>${data.poslovnica || 'N/A'}</td></tr>
-                                    <tr><td class="bold-header">Tip Kućišta:</td><td>${data.tip_kucista || 'N/A'}</td></tr>
-                                    <tr><td class="bold-header">Tip izolacije:</td><td>${data.tip_izolacije || 'N/A'}</td></tr>
-                                    <tr><td class="bold-header">Vlasnik:</td><td>${data.vlasnik || 'N/A'}</td></tr>
-                                    <tr><td class="bold-header">Godina izgradnje:</td><td>${data.godina_izgradnje || 'N/A'}</td></tr>
-                                </table>
-                            `;
-                        } else if (data.error) {
-                            resultDiv.innerHTML = `<p class="error">${data.error}</p>`;
+                            container.style.display = 'block';
+                        } else {
+                            container.style.display = 'none';
                         }
-                    })
-                    .catch(error => {
-                        console.error('Error during search:', error);
-                        document.getElementById('result-trafostanica').innerHTML =
-                            '<p class="error">Greška prilikom pretrage. Molimo pokušajte ponovo.</p>';
-                    });
-            });
-        });
-
-
-        // Pregled svih trafostanica
-        function toggleFullScreenTrafostanica() {
-            const mapContainer = document.getElementById('map-container-trafostanica');
-            if (!document.fullscreenElement) {
-                mapContainer.requestFullscreen().catch(err => {
-                    console.log(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                    } catch (error) {
+                        console.error('Error fetching suggestions:', error);
+                        container.style.display = 'none';
+                    }
+                }, 300);
+                
+                input.addEventListener('input', (e) => fetchSuggestions(e.target.value.trim()));
+                
+                document.addEventListener('click', (e) => {
+                    if (!input.contains(e.target) && !container.contains(e.target)) {
+                        container.style.display = 'none';
+                    }
                 });
-            } else {
-                document.exitFullscreen();
             }
-        }
+        };
 
-        // Function to load all trafostanice
-        function loadAllTrafostanice() {
-            const mapContainer = document.getElementById('map-container-trafostanica');
-            const statusDiv = document.getElementById('status');
+        // ==============================================
+        // INITIALIZATION
+        // ==============================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            // Setup simple searches
+            SearchHandlers.handleSimpleSearch('sifra-form', 'sifra', 'sifra-error', '/get_coordinates_by_sifra');
+            SearchHandlers.handleSimpleSearch('serijski_broj-form', 'serijski_broj', 'serijski-broj-error', '/get_coordinates_by_serijski_broj');
             
-            mapContainer.innerHTML = '';
-            statusDiv.textContent = 'Učitavanje mape...';
+            // Setup autocomplete
+            SearchHandlers.setupAutocomplete('kupac', 'kupac-suggestions', '/get_customer_suggestions');
+            SearchHandlers.setupAutocomplete('trafostanica', 'trafostanica-suggestions', '/get_trafostanica_suggestions');
+            SearchHandlers.setupAutocomplete('rastavljac', 'rastavljac-suggestions', '/get_rastavljac_suggestions');
             
-            fetch('/view_all_trafostanice')
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Network response was not ok');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    
-                    // Initialize map
-                    currentMap = L.map(mapContainer).setView(data.center, 11);
-                    
-                    // Define base maps
-                    const baseMaps = {
-                        "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                            maxZoom: 21,
-                            attribution: '© OpenStreetMap contributors'
-                        }),
-                        "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                            maxZoom: 18,
-                            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-                        })
-                    };
-                    
-                    // Add default layer
-                    baseMaps["Satellite"].addTo(currentMap);
-                    
-                    // Create marker cluster group
-                    const markers = L.markerClusterGroup({
-                        showCoverageOnHover: true,
-                        zoomToBoundsOnClick: true,
-                        spiderfyOnMaxZoom: true,
-                        removeOutsideVisibleBounds: true,
-                        maxClusterRadius: 40,
-                        spiderfyDistanceMultiplier: 1.5,
-                        disableClusteringAtZoom: 18,
-                        chunkedLoading: true,
-                        iconCreateFunction: function(cluster) {
-                            const count = cluster.getChildCount();
-                            let size = count < 10 ? 30 : count < 100 ? 35 : 40;
-                            
-                            return L.divIcon({
-                                html: `<div><span>${count}</span></div>`,
-                                className: 'marker-cluster-custom',
-                                iconSize: L.point(size, size)
-                            });
-                        }
+            // Kupac form submission
+            document.getElementById('kupac-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const input = document.getElementById('kupac').value.trim();
+                const match = input.match(/^(.*?)\s*\((\d+),/);
+                
+                if (!match) {
+                    document.getElementById('result-kupac').innerHTML = '<p>Nevažeći unos. Molimo odaberite kupca iz ponuđene liste.</p>';
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/get_coordinates_by_kupac', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: `kupac=${encodeURIComponent(match[1].trim())}&serijski=${encodeURIComponent(match[2])}`
                     });
                     
-                    // Add markers to cluster group
+                    const data = await response.json();
+                    document.getElementById('result-kupac').innerHTML = 
+                        data.error ? `<p class="error">${data.error}</p>` : Utils.createResultTable(data);
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('result-kupac').innerHTML = '<p>Greška prilikom pretrage.</p>';
+                }
+            });
+
+            // Trafostanica form
+            document.getElementById('trafostanica-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const value = document.getElementById('trafostanica').value.trim();
+                
+                try {
+                    const response = await fetch('/get_trafostanica_data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ trafostanica: value })
+                    });
+                    
+                    const data = await response.json();
+                    const resultDiv = document.getElementById('result-trafostanica');
+                    
+                    if (data.google_maps_url) {
+                        const d = data;
+                        resultDiv.innerHTML = `
+                            <table>
+                                <tr><td class="bold-header">Lokacija:</td><td><a href="${Utils.escapeHtml(d.google_maps_url)}" target="_blank">Google Maps link</a></td></tr>
+                                <tr><td class="bold-header">Naziv trafostanice:</td><td>${Utils.escapeHtml(d.naziv)}</td></tr>
+                                <tr><td class="bold-header">Snaga:</td><td>${d.snaga ? Utils.escapeHtml(d.snaga) + ' kVA' : 'N/A'}</td></tr>
+                                <tr><td class="bold-header">Broj transformatora:</td><td>${Utils.escapeHtml(d.broj_transformatora)}</td></tr>
+                                <tr><td class="bold-header">Konfiguracija SN postrojenja:</td><td>${Utils.escapeHtml(d.konfiguracija_SN_postrojenja)}</td></tr>
+                                <tr><td class="bold-header">Napojna trafostanica:</td><td>${Utils.escapeHtml(d.napojna_trafostanica)}</td></tr>
+                                <tr><td class="bold-header">Naziv SN odlaza:</td><td>${Utils.escapeHtml(d.naziv_SN_odlaza)}</td></tr>
+                                <tr><td class="bold-header">Tip trafostanice:</td><td>${Utils.escapeHtml(d.tip_trafostanice)}</td></tr>
+                                <tr><td class="bold-header">Poslovnica:</td><td>${Utils.escapeHtml(d.poslovnica)}</td></tr>
+                                <tr><td class="bold-header">Tip Kućišta:</td><td>${Utils.escapeHtml(d.tip_kucista)}</td></tr>
+                                <tr><td class="bold-header">Tip izolacije:</td><td>${Utils.escapeHtml(d.tip_izolacije)}</td></tr>
+                                <tr><td class="bold-header">Vlasnik:</td><td>${Utils.escapeHtml(d.vlasnik)}</td></tr>
+                                <tr><td class="bold-header">Godina izgradnje:</td><td>${Utils.escapeHtml(d.godina_izgradnje)}</td></tr>
+                            </table>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `<p class="error">${data.error || 'Podaci nisu pronađeni.'}</p>`;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('result-trafostanica').innerHTML = '<p class="error">Greška prilikom pretrage.</p>';
+                }
+            });
+
+            // Rastavljac form
+            document.getElementById('rastavljac-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const value = document.getElementById('rastavljac').value.trim();
+                
+                if (!value) {
+                    document.getElementById('rastavljac-error').textContent = 'Unesite naziv ili šifru rastavljača.';
+                    return;
+                }
+                document.getElementById('rastavljac-error').textContent = '';
+                
+                try {
+                    const response = await fetch('/get_rastavljac_data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ rastavljac: value })
+                    });
+                    
+                    const data = await response.json();
+                    const resultDiv = document.getElementById('result-rastavljac');
+                    
+                    if (data.google_maps_url) {
+                        const d = data;
+                        resultDiv.innerHTML = `
+                            <table>
+                                <tr><td class="bold-header">Lokacija:</td><td><a href="${Utils.escapeHtml(d.google_maps_url)}" target="_blank">Google Maps link</a></td></tr>
+                                <tr><td class="bold-header">Naziv (NTS/SNO):</td><td>${Utils.escapeHtml(d.naziv)}</td></tr>
+                                <tr><td class="bold-header">Šifra:</td><td>${Utils.escapeHtml(d.sifra)}</td></tr>
+                                <tr><td class="bold-header">PJ:</td><td>${Utils.escapeHtml(d.pj)}</td></tr>
+                                <tr><td class="bold-header">Vrsta upravljanja:</td><td>${Utils.escapeHtml(d.vrsta_upravljanja)}</td></tr>
+                                <tr><td class="bold-header">SNO naziv:</td><td>${Utils.escapeHtml(d.sno_naziv)}</td></tr>
+                                <tr><td class="bold-header">DSN:</td><td>${Utils.escapeHtml(d.dsn)}</td></tr>
+                                <tr><td class="bold-header">DSN naziv:</td><td>${Utils.escapeHtml(d.dsn_naziv)}</td></tr>
+                            </table>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `<p class="error">${data.error || 'Podaci nisu pronađeni.'}</p>`;
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('result-rastavljac').innerHTML = '<p class="error">Greška prilikom pretrage.</p>';
+                }
+            });
+
+            // OJ/OH Dropdowns
+            const ojDropdown = document.getElementById('oj-dropdown');
+            const ohDropdown = document.getElementById('oh-dropdown');
+            const searchButtonOH = document.getElementById('search-button-oh');
+            
+            ojDropdown.addEventListener('change', async () => {
+                const oj = ojDropdown.value;
+                ohDropdown.innerHTML = '<option value="">--Odaberite OH--</option>';
+                ohDropdown.disabled = true;
+                searchButtonOH.disabled = true;
+                
+                if (!oj) return;
+                
+                try {
+                    const response = await fetch(`/get_oh_values_by_oj/${oj}`);
+                    const data = await response.json();
+                    
+                    if (data.error) throw new Error(data.error);
+                    
+                    data.forEach(oh => {
+                        const option = document.createElement('option');
+                        option.value = oh;
+                        option.textContent = oh;
+                        ohDropdown.appendChild(option);
+                    });
+                    
+                    ohDropdown.disabled = false;
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('status-oh').textContent = `Greška: ${error.message}`;
+                }
+            });
+            
+            ohDropdown.addEventListener('change', () => {
+                searchButtonOH.disabled = !ohDropdown.value;
+            });
+            
+            searchButtonOH.addEventListener('click', async () => {
+                const oj = ojDropdown.value;
+                const oh = ohDropdown.value;
+                const container = document.getElementById('map-container-OH');
+                const status = document.getElementById('status-oh');
+                
+                try {
+                    status.textContent = 'Učitavanje mape...';
+                    container.innerHTML = '<div id="map-oh" style="height: 500px;"></div>';
+                    
+                    const response = await fetch(`/search_by_oj_oh?oj=${oj}&oh=${oh}`);
+                    const data = await response.json();
+                    
+                    if (data.error) throw new Error(data.error);
+                    
+                    const map = MapManager.createMap('map-oh', data.center);
+                    MapManager.addFullscreenControl(map, 'map-oh');
+                    
+                    const markers = MapManager.createMarkerCluster();
                     data.features.forEach(feature => {
                         const coords = feature.geometry.coordinates;
                         const props = feature.properties;
-                        
-                        const popupContent = `
-                            <div style='min-width: 200px'>
-                                <b>Naziv:</b> ${props.naziv}<br>
-                                <b>Snaga:</b> ${props.snaga} kVA
+                        const popup = `
+                            <div style="font-family: Arial, sans-serif; min-width: 200px;">
+                                <h4>Detalji mjernog mjesta</h4>
+                                <p><strong>Kupac:</strong> ${Utils.escapeHtml(props.IME_PREZIME)}</p>
+                                <p><strong>Adresa:</strong> ${Utils.escapeHtml(props.ADRESA_MM)}</p>
+                                <p><strong>Šifra:</strong> ${Utils.escapeHtml(props.SIFRA)}</p>
+                                <p><strong>Serijski broj:</strong> ${Utils.escapeHtml(props.SERIJSKI)}</p>
+                                <p><strong>Tip:</strong> ${Utils.escapeHtml(props.TIP)}</p>
+                                <p><strong>ROH:</strong> ${Utils.escapeHtml(props.ROH)}</p>
+                                <p><strong>Angažovana snaga:</strong> ${Utils.escapeHtml(props.ANG_SNAGA)}</p>
                             </div>
                         `;
-                        
-                        const marker = L.marker([coords[1], coords[0]])
-                            .bindPopup(popupContent)
-                            .bindTooltip(props.naziv);
-                        
-                        markers.addLayer(marker);
+                        markers.addLayer(L.marker([coords[1], coords[0]]).bindPopup(popup));
                     });
                     
-                    // Add marker cluster to map
-                    currentMap.addLayer(markers);
-                
-                    
-                    // Add custom fullscreen button
-                    const fullscreenButton = L.control({position: 'topright'});
-                    
-                    fullscreenButton.onAdd = function (map) {
-                        const btn = L.DomUtil.create('button', 'custom-fullscreen-btn');
-                        btn.innerHTML = '🗖';
-                        btn.title = 'View Fullscreen';
-                        
-                        btn.onclick = function() {
-                            if (!document.fullscreenElement) {
-                                const elem = mapContainer;
-                                if (elem.requestFullscreen) {
-                                    elem.requestFullscreen();
-                                } else if (elem.webkitRequestFullscreen) {
-                                    elem.webkitRequestFullscreen();
-                                } else if (elem.msRequestFullscreen) {
-                                    elem.msRequestFullscreen();
-                                }
-                                btn.innerHTML = '🗗';
-                            } else {
-                                if (document.exitFullscreen) {
-                                    document.exitFullscreen();
-                                } else if (document.webkitExitFullscreen) {
-                                    document.webkitExitFullscreen();
-                                } else if (document.msExitFullscreen) {
-                                    document.msExitFullscreen();
-                                }
-                                btn.innerHTML = '🗖';
-                            }
-                        };
-                        
-                        return btn;
-                    };
-                    
-                    fullscreenButton.addTo(currentMap);
-                    
-                    // Listen for fullscreen changes
-                    document.addEventListener('fullscreenchange', function() {
-                        const btn = document.querySelector('.custom-fullscreen-btn');
-                        if (document.fullscreenElement) {
-                            btn.innerHTML = '🗗';
-                        } else {
-                            btn.innerHTML = '🗖';
-                        }
-                    });
-
-                    // Add layer control
-                    L.control.layers(baseMaps, null, {
-                        position: 'topright'
-                    }).addTo(currentMap);
-                    
-                    // Add scale control
-                    L.control.scale().addTo(currentMap);                    
-                    
-                    statusDiv.textContent = 'Mapa uspješno učitana.';       
-                    
-                })
-                .catch(error => {
+                    map.addLayer(markers);
+                    status.textContent = `Prikazano ${data.features.length} lokacija.`;
+                } catch (error) {
                     console.error('Error:', error);
-                    mapContainer.innerHTML = '<p class="error">Došlo je do greške pri učitavanju mape: ' + error.message + '</p>';
-                    statusDiv.textContent = 'Došlo je do greške pri učitavanju mape.';
-                });
-        }
-
-
-
-
-        // Dio koda za geografski prikaz mjernih mejsta po trafopodručju
-        let allTsNazivValues = []; // Store all values for filtering
-        let currentMap = null;
-
-        window.onload = async function () {
-            const searchInput = document.getElementById('ts-search');
-            const dropdown = document.getElementById('ts-naziv-dropdown');
-            const statusDiv = document.getElementById('status');
-            const searchButton = document.getElementById('search-button');
-            
-            try {
-                statusDiv.textContent = "Loading data...";
-                const response = await fetch('/get_ts_naziv_values');
-                
-                if (!response.ok) {
-                    throw new Error('Failed to fetch TS_NAZIV values');
+                    status.textContent = `Greška: ${error.message}`;
                 }
-                
-                allTsNazivValues = await response.json();
-                updateDropdown(allTsNazivValues);
-                
-                statusDiv.textContent = "Data loaded.";
-                searchButton.disabled = !dropdown.value;
-                
-                // Handle search input
-                searchInput.addEventListener('input', debounce(async (e) => {
-                    const searchTerm = e.target.value.toLowerCase();
-                    if (searchTerm.length >= 2) {
-                        // Option 1: Filter existing values (client-side)
-                        const filteredValues = allTsNazivValues.filter(value => 
-                            value.toLowerCase().includes(searchTerm)
-                        );
-                        updateDropdown(filteredValues);
-                        
-                        // Option 2: Fetch from server (uncomment to use)
-                        /*
-                        const response = await fetch(`/get_ts_naziv_values?search=${encodeURIComponent(searchTerm)}`);
-                        if (response.ok) {
-                            const filteredValues = await response.json();
-                            updateDropdown(filteredValues);
-                        }
-                        */
-                    } else if (searchTerm.length === 0) {
-                        updateDropdown(allTsNazivValues);
-                    }
-                }, 300));
-                
-                // Handle dropdown selection
-                dropdown.addEventListener('change', () => {
-                    searchButton.disabled = !dropdown.value;
-                    if (dropdown.value) {
-                        searchInput.value = dropdown.value;
-                    }
-                });
-                
-            } catch (error) {
-                console.error('Error fetching TS_NAZIV values:', error);
-                statusDiv.textContent = "Error loading data.";
-            }
-        };
-
-        function updateDropdown(values) {
-            const dropdown = document.getElementById('ts-naziv-dropdown');
-            dropdown.innerHTML = '<option value="">--Odaberite Trafostanicu (TS_NAZIV)--</option>';
-            
-            values.forEach(value => {
-                const option = document.createElement('option');
-                option.value = value;
-                option.textContent = value;
-                dropdown.appendChild(option);
             });
-        }
 
-        // Debounce function to prevent too many API calls
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        async function fetchMapTSMM() {
-            const tsNaziv = document.getElementById('ts-naziv-dropdown').value;
-            const statusDiv = document.getElementById('status');
-            const mapContainer = document.getElementById('map-container-TSMM');
+            // TS Search
+            let allTsValues = [];
+            const tsSearch = document.getElementById('ts-search');
+            const tsDropdown = document.getElementById('ts-naziv-dropdown');
+            const searchButtonTS = document.getElementById('search-button-ts');
             
-            if (!tsNaziv) {
-                statusDiv.textContent = "Molimo odaberite Trafostanicu.";
-                return;
-            }
+            fetch('/get_ts_naziv_values')
+                .then(r => r.json())
+                .then(data => {
+                    allTsValues = data;
+                    data.forEach(value => {
+                        const option = document.createElement('option');
+                        option.value = value;
+                        option.textContent = value;
+                        tsDropdown.appendChild(option);
+                    });
+                })
+                .catch(err => console.error('Error loading TS values:', err));
             
-            try {
-                statusDiv.textContent = 'Učitavanje mape...';
-                mapContainer.innerHTML = '';
+            tsSearch.addEventListener('input', Utils.debounce((e) => {
+                const term = e.target.value.toLowerCase();
+                const filtered = term.length >= 2 ? allTsValues.filter(v => v.toLowerCase().includes(term)) : allTsValues;
                 
-                const response = await fetch(`/filter_data_by_ts_naziv?ts_naziv=${encodeURIComponent(tsNaziv)}`);
+                tsDropdown.innerHTML = '<option value="">--Odaberite Trafostanicu--</option>';
+                filtered.forEach(value => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    tsDropdown.appendChild(option);
+                });
+            }, 300));
+            
+            tsDropdown.addEventListener('change', () => {
+                searchButtonTS.disabled = !tsDropdown.value;
+                if (tsDropdown.value) tsSearch.value = tsDropdown.value;
+            });
+            
+            searchButtonTS.addEventListener('click', async () => {
+                const tsNaziv = tsDropdown.value;
+                if (!tsNaziv) return;
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                const container = document.getElementById('map-container-TSMM');
+                const status = document.getElementById('status-ts');
+                
+                try {
+                    status.textContent = 'Učitavanje mape...';
+                    container.innerHTML = '<div id="map-tsmm" style="height: 500px;"></div>';
+                    
+                    const response = await fetch(`/filter_data_by_ts_naziv?ts_naziv=${encodeURIComponent(tsNaziv)}`);
+                    const data = await response.json();
+                    
+                    if (data.error) throw new Error(data.error);
+                    
+                    const map = MapManager.createMap('map-tsmm', data.center);
+                    MapManager.addFullscreenControl(map, 'map-tsmm');
+                    
+                    const markers = MapManager.createMarkerCluster();
+                    data.features.forEach(feature => {
+                        const coords = feature.geometry.coordinates;
+                        const props = feature.properties;
+                        const popup = `
+                            <div style="font-family: Arial, sans-serif; min-width: 200px;">
+                                <h4>Detalji mjernog mjesta</h4>
+                                <p><strong>Kupac:</strong> ${Utils.escapeHtml(props.IME_PREZIME)}</p>
+                                <p><strong>Adresa:</strong> ${Utils.escapeHtml(props.ADRESA_MM)}</p>
+                                <p><strong>Šifra:</strong> ${Utils.escapeHtml(props.SIFRA)}</p>
+                                <p><strong>Serijski broj:</strong> ${Utils.escapeHtml(props.SERIJSKI)}</p>
+                                <p><strong>Tip:</strong> ${Utils.escapeHtml(props.TIP)}</p>
+                                <p><strong>Angažovana snaga:</strong> ${Utils.escapeHtml(props.ANG_SNAGA)}</p>
+                            </div>
+                        `;
+                        markers.addLayer(L.marker([coords[1], coords[0]]).bindPopup(popup));
+                    });
+                    
+                    map.addLayer(markers);
+                    status.textContent = 'Mapa uspješno učitana.';
+                } catch (error) {
+                    console.error('Error:', error);
+                    status.textContent = `Greška: ${error.message}`;
                 }
+            });
+
+            // View All Trafostanice
+            document.getElementById('view-all-btn').addEventListener('click', async () => {
+                const container = document.getElementById('map-container-trafostanica');
+                const status = document.getElementById('status-trafostanica');
                 
-                const data = await response.json();
-                
-                if (data.error) {
-                    throw new Error(data.error);
+                try {
+                    status.textContent = 'Učitavanje mape...';
+                    container.innerHTML = '<div id="map-all-trafo" style="height: 500px;"></div>';
+                    
+                    const response = await fetch('/view_all_trafostanice');
+                    const data = await response.json();
+                    
+                    if (data.error) throw new Error(data.error);
+                    
+                    const map = MapManager.createMap('map-all-trafo', data.center, 11);
+                    MapManager.addFullscreenControl(map, 'map-all-trafo');
+                    
+                    const markers = MapManager.createMarkerCluster();
+                    data.features.forEach(feature => {
+                        const coords = feature.geometry.coordinates;
+                        const props = feature.properties;
+                        const popup = `
+                            <div style='min-width: 200px'>
+                                <b>Naziv:</b> ${Utils.escapeHtml(props.naziv)}<br>
+                                <b>Snaga:</b> ${Utils.escapeHtml(props.snaga)} kVA
+                            </div>
+                        `;
+                        markers.addLayer(L.marker([coords[1], coords[0]]).bindPopup(popup).bindTooltip(props.naziv));
+                    });
+                    
+                    map.addLayer(markers);
+                    status.textContent = 'Mapa uspješno učitana.';
+                } catch (error) {
+                    console.error('Error:', error);
+                    status.textContent = `Greška: ${error.message}`;
                 }
-                
-                const mapDiv = document.createElement('div');
-                mapDiv.style.height = '500px';
-                mapContainer.appendChild(mapDiv);
-                
-                // Initialize map
-                currentMap = L.map(mapDiv).setView(data.center, 13);
-                
-                // Define base maps
-                const baseMaps = {
-                    "Satellite": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                        maxZoom: 18,
-                        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
-                    }),                    
-                    "OpenStreetMap": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        maxZoom: 21,
-                        attribution: '© OpenStreetMap contributors'
-                    })
-                };
-                
-                // Add default layer
-                baseMaps["Satellite"].addTo(currentMap);
-                
-                // Create a marker cluster group with modified settings
-                const markers = L.markerClusterGroup({
-                    showCoverageOnHover: true,
-                    zoomToBoundsOnClick: true,
-                    spiderfyOnMaxZoom: true,
-                    removeOutsideVisibleBounds: true,
-                    maxClusterRadius: 40,
-                    spiderfyDistanceMultiplier: 1.5,
-                    disableClusteringAtZoom: 22,  // Disable clustering at maximum zoom
-                    chunkedLoading: true,
-                    iconCreateFunction: function(cluster) {
-                        const count = cluster.getChildCount();
-                        let size;
-                        let className = 'marker-cluster-custom';
-                        
-                        if (count < 10) {
-                            size = 30;
-                        } else if (count < 100) {
-                            size = 35;
-                        } else {
-                            size = 40;
-                        }
-                        
-                        return L.divIcon({
-                            html: `<div><span>${count}</span></div>`,
-                            className: className,
-                            iconSize: L.point(size, size)
-                        });
-                    }
-                });
-                
-                // Add markers to cluster group
-                data.features.forEach(feature => {
-                    const coords = feature.geometry.coordinates;
-                    const props = feature.properties;
-                    
-                    const popupContent = `
-                        <strong>Ime i prezime:</strong> ${props.IME_PREZIME || 'N/A'}<br>
-                        <strong>Adresa:</strong> ${props.ADRESA_MM || 'N/A'}<br>
-                        <strong>Šifra mjernog mjesta:</strong> ${props.SIFRA || 'N/A'}<br>
-                        <strong>Angažovana snaga:</strong> ${props.ANG_SNAGA || 'N/A'}<br>
-                    `;
-                    
-                    const marker = L.marker([coords[1], coords[0]])
-                        .bindPopup(popupContent);
-                    
-                    markers.addLayer(marker);
-                });
-                
-                // Add marker cluster to map
-                currentMap.addLayer(markers);
-                
-                // Add custom fullscreen button
-                const fullscreenButton = L.control({position: 'topright'});
-                
-                fullscreenButton.onAdd = function (map) {
-                    const btn = L.DomUtil.create('button', 'custom-fullscreen-btn');
-                    btn.innerHTML = '🗖';
-                    btn.title = 'View Fullscreen';
-                    
-                    btn.onclick = function() {
-                        if (!document.fullscreenElement) {
-                            const elem = mapDiv;
-                            if (elem.requestFullscreen) {
-                                elem.requestFullscreen();
-                            } else if (elem.webkitRequestFullscreen) {
-                                elem.webkitRequestFullscreen();
-                            } else if (elem.msRequestFullscreen) {
-                                elem.msRequestFullscreen();
-                            }
-                            btn.innerHTML = '🗗';
-                        } else {
-                            if (document.exitFullscreen) {
-                                document.exitFullscreen();
-                            } else if (document.webkitExitFullscreen) {
-                                document.webkitExitFullscreen();
-                            } else if (document.msExitFullscreen) {
-                                document.msExitFullscreen();
-                            }
-                            btn.innerHTML = '🗖';
-                        }
-                    };
-                    
-                    return btn;
-                };
-                
-                fullscreenButton.addTo(currentMap);
-                
-                // Listen for fullscreen changes
-                document.addEventListener('fullscreenchange', function() {
-                    const btn = document.querySelector('.custom-fullscreen-btn');
-                    if (document.fullscreenElement) {
-                        btn.innerHTML = '🗗';
-                    } else {
-                        btn.innerHTML = '🗖';
-                    }
-                });
-
-                                // Add layer control
-                                L.control.layers(baseMaps, null, {
-                    position: 'topright'
-                }).addTo(currentMap);
-                
-                // Add scale control
-                L.control.scale().addTo(currentMap);
-                
-                statusDiv.textContent = "Mapa uspješno učitana.";
-            } catch (error) {
-                console.error('Error:', error);
-                statusDiv.textContent = `Došlo je do greške: ${error.message}`;
-                mapContainer.innerHTML = `<p class="error">Došlo je do greške pri učitavanju mape: ${error.message}</p>`;
-            }
-        }
-
-
-
-
-
+            });
+        });
     </script>
 </body>
-
 </html>
